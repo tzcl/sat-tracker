@@ -60,7 +60,7 @@ while True:
     topocentric = diff.at(t)
 
     alt, az, distance = topocentric.altaz()
-    print("Time:", t.utc_strftime("%Y-%m-%d %H:%M:%S"))
+    print("Time (UTC):", t.utc_strftime("%Y-%m-%d %H:%M:%S"))
     print('Altitude:', alt)
     print('Azimuth:', az)
     print('Distance: {:.1f} km'.format(distance.km))
