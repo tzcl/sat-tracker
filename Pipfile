@@ -11,6 +11,3 @@ sgp4 = "==2.20"
 skyfield = "==1.39"
 
 [dev-packages]
-
-[requires]
-python_version = "3.8"
