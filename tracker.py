@@ -17,6 +17,9 @@ from argparse import ArgumentParser
 from skyfield.api import load, wgs84
 from datetime import datetime
 import pytz
+from collections import defaultdict
+import pprint                   # FIXME: debug dictionary
+import numpy as np
 
 MELB_LAT = -37.814
 MELB_LON = 144.96332
@@ -60,7 +63,7 @@ ts = load.timescale()
 t = ts.now()
 days = t - sat.epoch
 
-# Redownload the TLE if we need to
+# Redownload the TLE if necessary
 if abs(days) > 14:
     satellites = load.tle_file(url, filename=filename, reload=True)
     sat = satellites[sat_offs]
@@ -74,8 +77,34 @@ tz = pytz.timezone('Australia/Melbourne')
 t0 = ts.from_datetime(datetime(2021, 8, 3, tzinfo=tz))
 t1 = ts.from_datetime(datetime(2021, 8, 5, tzinfo=tz))
 
+# Keep track of events
+when = defaultdict(list)
+
 t, events = sat.find_events(ground_station, t0, t1)
 for ti, event in zip(t, events):
-    name = ('rise above 0°', 'culminate', 'set below 0°')[event]
-    dt = ti.astimezone(tz)
-    print(dt.strftime("%Y %D %H:%M:%S"), name)
+    name = ('rise', 'culminate', 'set')[event]
+    when[name].append(ti)
+
+first_rise = when['rise'][0].astimezone(tz)
+first_set = when['set'][0].astimezone(tz)
+seconds = (first_set - first_rise).total_seconds()
+
+start = when['rise'][0]
+end = when['set'][0]
+
+whole = start.whole
+start_fraction = start.tt_fraction
+end_fraction = end.whole - start.whole + end.tt_fraction
+fraction = np.linspace(start_fraction, end_fraction, int(seconds))
+times = ts.tt_jd(whole, fraction)
+
+print(times)
+
+topocentric = diff.at(times)
+for t, p in zip(times, topocentric):
+    dt = t.astimezone(tz)
+    alt, az, distance = p.altaz()
+    print(dt.strftime("%Y %D %H:%M:%S"))
+    print("Altitude:", alt)
+    print("Azimuth:", az)
+    print("Distance: {:.1f} km".format(distance.km))
