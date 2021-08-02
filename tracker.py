@@ -4,16 +4,19 @@
 This is a script that tracks the trajectory of a satellite over time.
 
 Input: satellite ID (either NORAD ID or international code).
-Output: an array containing satellite trajectory in terms of long/lat over time.
+Output: an array containing satellite trajectory in terms of long/lat over time
 """
 
 # TODO: upgrades to script
 # - Determine the next rise/pass
+#   - Look into findevents, compare against Stellarium
+#   - Calculate timezone from lat/long???
 # - Print asimuth/zenith to file
 
 from argparse import ArgumentParser
-from time import sleep
 from skyfield.api import load, wgs84
+from datetime import datetime
+import pytz
 
 MELB_LAT = -37.814
 MELB_LON = 144.96332
@@ -66,14 +69,13 @@ if abs(days) > 14:
 ground_station = wgs84.latlon(ground_lat, ground_lon)
 diff = sat - ground_station
 
-while True:
-    t = ts.now()
-    topocentric = diff.at(t)
+tz = pytz.timezone('Australia/Melbourne')
 
-    alt, az, distance = topocentric.altaz()
-    print("Time (UTC):", t.utc_strftime("%Y-%m-%d %H:%M:%S"))
-    print('Altitude:', alt)
-    print('Azimuth:', az)
-    print('Distance: {:.1f} km'.format(distance.km))
+t0 = ts.from_datetime(datetime(2021, 8, 3, tzinfo=tz))
+t1 = ts.from_datetime(datetime(2021, 8, 5, tzinfo=tz))
 
-    sleep(1)
+t, events = sat.find_events(ground_station, t0, t1)
+for ti, event in zip(t, events):
+    name = ('rise above 0°', 'culminate', 'set below 0°')[event]
+    dt = ti.astimezone(tz)
+    print(dt.strftime("%Y %D %H:%M:%S"), name)

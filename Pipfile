@@ -9,5 +9,6 @@ jplephem = "==2.16"
 numpy = "==1.21.1"
 sgp4 = "==2.20"
 skyfield = "==1.39"
+pytz = "*"
 
 [dev-packages]
