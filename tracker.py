@@ -48,6 +48,8 @@ if not is_norad:
     sat_offs = ord(sat_id[-1]) - ord('A')
     sat_id = sat_id[:-1]
 
+print("Getting satellite data...")
+
 # Load TLE and parse into EarthSatellite
 request_type = 'CATNR' if is_norad else 'INTDES'
 url = f'https://celestrak.com/satcat/tle.php?{request_type}={sat_id}'
@@ -76,6 +78,8 @@ diff = sat - ground_station
 # NOTE: (it's hard trying to work out city from lat/lon)
 tz = pytz.timezone('Australia/Melbourne')
 
+print(f"Calculating when {sat.name} will be visible...")
+
 t0 = ts.now()
 # TODO: hardcoded 1-day increment
 t1 = ts.utc(t0.utc_datetime() + timedelta(days=1))
@@ -87,6 +91,8 @@ t, events = sat.find_events(ground_station, t0, t1)
 for ti, event in zip(t, events):
     name = ('rise', 'culminate', 'set')[event]
     when[name].append(ti)
+
+print("Generating pass data...")
 
 # CSV header
 HEADER = ["timestamp", "altitude", "azimuth"]
@@ -125,7 +131,9 @@ def pass_to_csv(t0, t1, vec, filename):
 
 
 # Iterate over satellite passes
-num_passes = 1
+num_passes = 0
 for rise, set in zip(when['rise'], when['set']):
-    pass_to_csv(rise, set, diff, f"pass{num_passes}.csv")
     num_passes += 1
+    pass_to_csv(rise, set, diff, f"pass{num_passes}.csv")
+
+print(f"Finished! Produced {num_passes} files ('pass1.csv', ..., 'pass{num_passes}.csv').")
