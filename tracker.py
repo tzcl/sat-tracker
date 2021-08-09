@@ -15,11 +15,11 @@ Output: an array containing satellite trajectory in terms of long/lat over time
 
 from argparse import ArgumentParser
 from skyfield.api import load, wgs84
-from datetime import datetime
+from datetime import timedelta
 import pytz
 from collections import defaultdict
-import pprint                   # FIXME: debug dictionary
 import numpy as np
+import csv
 
 MELB_LAT = -37.814
 MELB_LON = 144.96332
@@ -72,10 +72,13 @@ if abs(days) > 14:
 ground_station = wgs84.latlon(ground_lat, ground_lon)
 diff = sat - ground_station
 
+# NOTE: assume ground station is in Melbourne
+# NOTE: (it's hard trying to work out city from lat/lon)
 tz = pytz.timezone('Australia/Melbourne')
 
-t0 = ts.from_datetime(datetime(2021, 8, 3, tzinfo=tz))
-t1 = ts.from_datetime(datetime(2021, 8, 5, tzinfo=tz))
+t0 = ts.now()
+# TODO: hardcoded 1-day increment
+t1 = ts.utc(t0.utc_datetime() + timedelta(days=1))
 
 # Keep track of events
 when = defaultdict(list)
@@ -85,26 +88,44 @@ for ti, event in zip(t, events):
     name = ('rise', 'culminate', 'set')[event]
     when[name].append(ti)
 
-first_rise = when['rise'][0].astimezone(tz)
-first_set = when['set'][0].astimezone(tz)
-seconds = (first_set - first_rise).total_seconds()
+# CSV header
+HEADER = ["timestamp", "altitude", "azimuth"]
+# CSV decimal places
+PRECISION = 6
 
-start = when['rise'][0]
-end = when['set'][0]
 
-whole = start.whole
-start_fraction = start.tt_fraction
-end_fraction = end.whole - start.whole + end.tt_fraction
-fraction = np.linspace(start_fraction, end_fraction, int(seconds))
-times = ts.tt_jd(whole, fraction)
+def pass_to_csv(t0, t1, vec, filename):
+    """Calculate trajectory and store the output in a CSV file."""
+    start = t0
+    end = t1
 
-print(times)
+    seconds = (end.utc_datetime() - start.utc_datetime()).total_seconds()
 
-topocentric = diff.at(times)
-for t, p in zip(times, topocentric):
-    dt = t.astimezone(tz)
-    alt, az, distance = p.altaz()
-    print(dt.strftime("%Y %D %H:%M:%S"))
-    print("Altitude:", alt)
-    print("Azimuth:", az)
-    print("Distance: {:.1f} km".format(distance.km))
+    whole = start.whole
+    start_fraction = start.tt_fraction
+    end_fraction = end.whole - start.whole + end.tt_fraction
+    fraction = np.linspace(start_fraction, end_fraction, int(seconds))
+    times = ts.tt_jd(whole, fraction)
+
+    topocentric = vec.at(times)
+
+    with open(filename, 'w', encoding='UTF8') as f:
+        writer = csv.writer(f)
+        writer.writerow(HEADER)
+
+        for t, p in zip(times, topocentric):
+            dt = t.astimezone(tz)
+            timestamp = dt.strftime("%D-%H:%M:%S")
+            alt, az, distance = p.altaz()
+
+            data = [timestamp,
+                    round(alt.degrees, PRECISION),
+                    round(az.degrees, PRECISION)]
+            writer.writerow(data)
+
+
+# Iterate over satellite passes
+num_passes = 1
+for rise, set in zip(when['rise'], when['set']):
+    pass_to_csv(rise, set, diff, f"pass{num_passes}.csv")
+    num_passes += 1
