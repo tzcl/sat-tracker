@@ -25,45 +25,46 @@ Before running the script, make sure to activate the virtual environment.
 pipenv activate
 ```
 
-The script itself takes one argument, `id`, which can be a satellite's NORAD ID or its international code.
+The script itself takes one argument, `id`, which can be a satellite's NORAD ID or its international code. You can optionally specify the latitude and longitude of the ground station by passing them after the `id`. By default, the script uses Melbourne's latitude and longitude.
 
 ```
-usage: tracker.py [-h] [--reload] id
+usage: tracker.py [-h] id [lat] [lon]
 
 positional arguments:
   id          satellite id to track
+  lat         ground station latitude
+  lon         ground station longitude
 
 optional arguments:
   -h, --help  show this help message and exit
-  --reload    force redownload of satellite TLE
 ```
 
 ## Output
 
-Running the script for NOAA-20 (NORAD ID: 43013).
+The script will generate CSV files for each pass of the specified satellite over the next 24 hours (from the time the script was run).
+
+Running the script for NOAA-20 (NORAD ID: 43013) with a ground station east of Melbourne.
 
 ```
-python tracker.py 43013
+python tracker.py 43013 -37.793611 145.086389
 ```
 
 Output:
 ```
+Getting satellite data...
 [#################################] 100% CATNR-43013.txt
-Time (UTC): 2021-07-27 23:19:48
-Altitude: -30deg 29' 33.7"
-Azimuth: 199deg 24' 19.1"
-Distance: 7939.9 km
-Time (UTC): 2021-07-27 23:19:49
-Altitude: -30deg 28' 30.2"
-Azimuth: 199deg 21' 01.0"
-Distance: 7937.1 km
-Time (UTC): 2021-07-27 23:19:50
-Altitude: -30deg 27' 26.1"
-Azimuth: 199deg 17' 41.2"
-Distance: 7934.2 km
-Time (UTC): 2021-07-27 23:19:51
-Altitude: -30deg 26' 22.3"
-Azimuth: 199deg 14' 22.1"
-Distance: 7931.4 km
+Calculating when NOAA 20 will be visible...
+Generating pass data...
+Finished! Produced 6 files ('pass1.csv', ..., 'pass6.csv').
+```
+
+pass1.csv:
+```
+timestamp,altitude,azimuth
+08/09/21-23:54:49,0.0038,56.297977
+08/09/21-23:54:50,0.055436,56.364814
+08/09/21-23:54:51,0.107125,56.431882
+08/09/21-23:54:52,0.158869,56.499183
+08/09/21-23:54:53,0.210667,56.566719
 ...
 ```
