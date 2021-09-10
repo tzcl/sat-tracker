@@ -121,7 +121,7 @@ def pass_to_csv(t0, t1, vec, filename):
 
         for t, p in zip(times, topocentric):
             dt = t.astimezone(tz)
-            timestamp = dt.strftime("%D-%H:%M:%S")
+            timestamp = dt.strftime("%y/%m/%d-%H:%M:%S")
             alt, az, distance = p.altaz()
 
             data = [timestamp,
@@ -136,4 +136,5 @@ for rise, set in zip(when['rise'], when['set']):
     num_passes += 1
     pass_to_csv(rise, set, diff, f"pass{num_passes}.csv")
 
-print(f"Finished! Produced {num_passes} files ('pass1.csv', ..., 'pass{num_passes}.csv').")
+print(f"Finished! Produced {num_passes} files"
+      f"('pass1.csv', ..., 'pass{num_passes}.csv').")
