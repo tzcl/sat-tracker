@@ -19,10 +19,10 @@ pipenv install
 
 ## Usage
 
-Before running the script, make sure to activate the virtual environment.
+To run the script, use
 
 ```
-pipenv activate
+pipenv run python tracker.py [args]
 ```
 
 The script itself takes one argument, `id`, which can be a satellite's NORAD ID or its international code. You can optionally specify the latitude and longitude of the ground station by passing them after the `id`. By default, the script uses Melbourne's latitude and longitude.
