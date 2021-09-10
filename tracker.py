@@ -24,6 +24,8 @@ import csv
 MELB_LAT = -37.814
 MELB_LON = 144.96332
 
+MIN_ALT = 30
+
 # Read satellite id from command line
 parser = ArgumentParser()
 parser.add_argument("id", help="satellite id to track")
@@ -31,11 +33,14 @@ parser.add_argument("lat", nargs="?", default=MELB_LAT,
                     help="ground station latitude")
 parser.add_argument("lon", nargs="?", default=MELB_LON,
                     help="ground station longitude")
+parser.add_argument("alt", nargs="?", default=MIN_ALT,
+                    help="minimum altitude of satellite pass")
 args = parser.parse_args()
 
 sat_id = args.id
 ground_lat = args.lat
 ground_lon = args.lon
+min_alt = args.alt
 
 # Parse satellite id
 #  International ids are of the form YYYY-NNNA, e.g., 2017-073A
@@ -87,7 +92,7 @@ t1 = ts.utc(t0.utc_datetime() + timedelta(days=1))
 # Keep track of events
 when = defaultdict(list)
 
-t, events = sat.find_events(ground_station, t0, t1)
+t, events = sat.find_events(ground_station, t0, t1, altitude_degrees=min_alt)
 for ti, event in zip(t, events):
     name = ('rise', 'culminate', 'set')[event]
     when[name].append(ti)
